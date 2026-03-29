@@ -43,6 +43,8 @@ No third-party cryptographic libraries are required.
    - Go to the **"Normal Client Mode"** tab in the client application.
    - Enter a simple message (e.g., "Hello Server!") and click **"Send to Server"**.
    - The server processes `SHA1(secret || message)` and returns the MAC and SHA-1 internals block statistics.
+     <img width="1365" height="615" alt="image" src="https://github.com/user-attachments/assets/14dbccba-6488-44cc-b9f3-0ca04c93cb91" />
+
 2. **Execute the Attack**
    - Switch to the **"Attacker Mode"** tab. The original message and MAC will auto-populate.
    - Enter your malicious extension string.
@@ -50,10 +52,12 @@ No third-party cryptographic libraries are required.
    - Click **"Perform Length Extension Attack"**.
    - The client will simulate the attack by iterating through the guessed secret lengths. It will properly pad the original message, set the initial SHA-1 internal registers (`h0-h4`) to the hex values of the originally intercepted MAC, and process the extension to forge the new MAC.
    - Once the guessed length matches the server's true secret length, the server will log `VERIFICATION -> ACCEPTED` and the client will display `[SUCCESS] Attack completed!`.
+<img width="1364" height="709" alt="image" src="https://github.com/user-attachments/assets/bcbcc40f-de86-470a-aaa3-2a82c61bbaea" />
 
 3. **Analyze the Internals**
    - Switch to the **"SHA Internals"** tab.
    - Review the step-by-step block processing. Observe how the final states (`h0-h4`) of the original MAC become the initial states of the attacker's customized SHA-1 process for the forged extension. You can also see the exact reconstruction of the NIST FIPS 180-4 padding in hex.
+<img width="1365" height="719" alt="image" src="https://github.com/user-attachments/assets/f12f209d-9489-4c06-9af0-37368b1bf26e" />
 
 ## Educational Purpose
 
