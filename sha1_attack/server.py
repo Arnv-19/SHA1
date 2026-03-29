@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 import json
 import os
-from sha1 import SHA1, generate_padding
+from sha1 import SHA1, generate_padding, compute_hmac_sha1
 
 class ServerApp:
     def __init__(self, root):
@@ -20,6 +20,7 @@ class ServerApp:
         
         # TCP Server
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind(('localhost', 5000))
         self.server_socket.listen(5)
         
@@ -75,7 +76,7 @@ class ServerApp:
                 if not chunk:
                     break
                 data += chunk
-                if b'}' in chunk: # crude message boundary
+                if b'}' in chunk:
                     break
             
             if not data:
@@ -84,37 +85,45 @@ class ServerApp:
             req = json.loads(data.decode('utf-8'))
             msg_hex = req.get('message', '')
             recv_mac = req.get('mac', '')
+            use_hmac = req.get('use_hmac', False)
             
             try:
                 msg_bytes = bytes.fromhex(msg_hex)
             except ValueError:
                 msg_bytes = msg_hex.encode('utf-8')
                 
-            self.log(f"--- NEW REQUEST FROM {addr} ---")
+            mac_mode = "HMAC-SHA1" if use_hmac else "SHA1-MAC"
+            self.log(f"--- NEW REQUEST FROM {addr} [{mac_mode}] ---")
             self.log(f"Message (hex): {msg_bytes.hex()}")
             ascii_msg = ''.join(chr(b) if 32 <= b <= 126 else '.' for b in msg_bytes)
             self.log(f"Message (ASCII): {ascii_msg}")
             
-            payload = self.secret + msg_bytes
-            
-            sha = SHA1()
-            sha.update(payload)
-            computed_mac = sha.hexdigest()
-            
-            self.log(f"Message length in bits (including secret): {len(payload)*8}")
-            self.log(f"Number of 512-bit blocks: {len(sha.history)}")
-            padding = generate_padding(len(payload))
-            self.log(f"Padding added (hex): {padding.hex()}")
-            
-            for i, blk in enumerate(sha.history):
-                self.log(f"  Block {i} Content (hex): {blk['chunk']}")
-                self.log(f"    Initial h0-h4: {['%08x' % x for x in blk['initial_h']]}")
-                self.log(f"    Final h0-h4:   {['%08x' % x for x in blk['final_h']]}")
-                
-            self.log(f"Computed MAC: {computed_mac}")
+            if use_hmac:
+                computed_mac = compute_hmac_sha1(self.secret, msg_bytes)
+                self.log(f"Computed HMAC-SHA1: {computed_mac}")
+                sha_history = []
+                padding_hex = ""
+                msg_bits = len(msg_bytes) * 8
+            else:
+                payload = self.secret + msg_bytes
+                sha = SHA1()
+                sha.update(payload)
+                computed_mac = sha.hexdigest()
+                sha_history = sha.history
+                padding = generate_padding(len(payload))
+                padding_hex = padding.hex()
+                msg_bits = len(payload) * 8
+                self.log(f"Message length in bits (including secret): {msg_bits}")
+                self.log(f"Number of 512-bit blocks: {len(sha.history)}")
+                self.log(f"Padding added (hex): {padding_hex}")
+                for i, blk in enumerate(sha.history):
+                    self.log(f"  Block {i} Content (hex): {blk['chunk']}")
+                    self.log(f"    Initial h0-h4: {['%08x' % x for x in blk['initial_h']]}")
+                    self.log(f"    Final h0-h4:   {['%08x' % x for x in blk['final_h']]}")
+                self.log(f"Computed MAC: {computed_mac}")
             
             if recv_mac == "":
-                self.log("Action: MAC GENERATION")
+                self.log(f"Action: MAC GENERATION [{mac_mode}]")
                 status = "GENERATED"
             else:
                 self.log(f"Received MAC: {recv_mac}")
@@ -126,9 +135,10 @@ class ServerApp:
             res = json.dumps({
                 "status": status,
                 "mac": computed_mac,
-                "history": sha.history,
-                "padding": padding.hex(),
-                "msg_bits": len(payload)*8
+                "mac_mode": mac_mode,
+                "history": sha_history,
+                "padding": padding_hex,
+                "msg_bits": msg_bits
             })
             client.sendall(res.encode('utf-8'))
         except Exception as e:

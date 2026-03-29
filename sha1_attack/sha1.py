@@ -107,3 +107,25 @@ class SHA1:
         
         self.unprocessed = b''
         return res
+
+
+def compute_hmac_sha1(key: bytes, message: bytes) -> str:
+    """HMAC-SHA1 per FIPS 198-1. Immune to length extension attacks."""
+    BLOCK_SIZE = 64
+    # If key is longer than block size, hash it
+    if len(key) > BLOCK_SIZE:
+        h = SHA1()
+        h.update(key)
+        key = bytes.fromhex(h.hexdigest())
+    # Pad key to block size
+    key = key.ljust(BLOCK_SIZE, b'\x00')
+    ipad = bytes(b ^ 0x36 for b in key)
+    opad = bytes(b ^ 0x5C for b in key)
+    # Inner hash: SHA1(ipad || message)
+    inner = SHA1()
+    inner.update(ipad + message)
+    inner_digest = bytes.fromhex(inner.hexdigest())
+    # Outer hash: SHA1(opad || inner_digest)
+    outer = SHA1()
+    outer.update(opad + inner_digest)
+    return outer.hexdigest()
