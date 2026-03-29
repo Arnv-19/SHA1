@@ -180,8 +180,8 @@ class ClientApp:
         if is_hmac:
             self.t2_out.insert(tk.END,
                 "╔══════════════════════════════════════════════════════════════╗\n"
-                "║  TARGET IS PROTECTED BY HMAC-SHA1                           ║\n"
-                "║  Attempting length extension attack anyway...               ║\n"
+                "║  TARGET IS PROTECTED BY HMAC-SHA1                            ║\n"
+                "║  Attempting length extension attack anyway...                ║\n"
                 "╚══════════════════════════════════════════════════════════════╝\n\n",
                 "defense")
         else:
@@ -240,7 +240,7 @@ class ClientApp:
 
                 self.t2_out.insert(tk.END,
                     f"\n╔══════════════════════════════════════════════════════════════╗\n"
-                    f"║  [SUCCESS] Attack completed!                                ║\n"
+                    f"║  [SUCCESS] Attack completed!                                 ║\n"
                     f"╚══════════════════════════════════════════════════════════════╝\n",
                     "success")
                 self.t2_out.insert(tk.END, f"  Correct Secret Length : {l}\n", "success")
@@ -266,7 +266,7 @@ class ClientApp:
                 analytics["hmac_mem_kb"].append(peak / 1024)
                 self.t2_out.insert(tk.END,
                     f"\n╔══════════════════════════════════════════════════════════════╗\n"
-                    f"║  [DEFENSE ACTIVE] HMAC prevents length extension!          ║\n"
+                    f"║  [DEFENSE ACTIVE] HMAC prevents length extension!              ║\n"
                     f"║  All {total_attempts:<3} guesses REJECTED — attack completely failed.  ║\n"
                     f"╚══════════════════════════════════════════════════════════════╝\n",
                     "defense")
