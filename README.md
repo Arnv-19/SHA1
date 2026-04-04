@@ -1,10 +1,13 @@
 SHA-1 Length Extension Attack Simulation
+
 This project is a Python 3 application that demonstrates a SHA-1 Length Extension Attack. It features a complete client-server architecture, a Tkinter GUI to visualize the attack interactively, and a clean, step-by-step mathematical implementation of the SHA-1 logic adhering to NIST FIPS 180-4.
 
 Overview
+
 The application simulates a scenario where a server authenticates messages using a Message Authentication Code (MAC) generated with a secret key (MAC = SHA1(secret || message)). An attacker, without knowing the secret key, can intercept the message and MAC, append malicious data to the message, and forge a valid MAC for the extended message.
 
 Core Components
+
 sha1.py: A manual Python implementation of the SHA-1 algorithm. This custom implementation is crucial because standard libraries (like hashlib) do not allow extracting or setting the internal state (h0-h4 registers), nor processing raw chunks, which are required to perform a length extension attack. It also records the block-processing history for visualization.
 
 server.py: A Tkinter-based TCP server listening on localhost:5000. It maintains a randomly generated secret key. It computes the MAC of incoming data and verifies whether client-submitted MACs match its own computation.
